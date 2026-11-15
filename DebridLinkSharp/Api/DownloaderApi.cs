@@ -12,6 +12,14 @@ public sealed class DownloaderApi
         _http = http;
     }
 
+    public async Task<IReadOnlyList<DownloaderHost>> GetHostsAsync(CancellationToken cancellationToken = default)
+    {
+        var value = await _http.SendAsync(HttpMethod.Get, "downloader/hosts", null, cancellationToken).ConfigureAwait(false);
+        var hosts = DebridLinkHttp.Deserialize(value, DebridLinkJsonContext.Default.DownloaderHostArray, "a list of hosts");
+        DebridLinkHttp.RequireNoNulls(hosts, "a list of hosts");
+        return hosts;
+    }
+
     public async Task<DownloaderLimits> GetLimitsAsync(bool all = false, CancellationToken cancellationToken = default)
     {
         var path = all ? "downloader/limits/all" : "downloader/limits";
