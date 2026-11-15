@@ -1,6 +1,6 @@
 # DebridLinkSharp
 
-A small .NET client for the **[Debrid-Link](https://debrid-link.com) API v2**. For now it reads your account: the account type, the premium time left, the points and the settings, as plain objects. It also reads the daily limits of the downloader.
+A small .NET client for the **[Debrid-Link](https://debrid-link.com) API v2**. For now it reads your account: the account type, the premium time left, the points and the settings, as plain objects. It also reads the daily limits and the hosts of the downloader, and removes links.
 
 - Targets `net11.0` and has no third-party dependencies: HTTP comes from `System.Net.Http`, JSON from `System.Text.Json`.
 - Plain model classes. The JSON handling uses serializers generated at compile time, so it needs no reflection.
@@ -42,17 +42,21 @@ HosterLimit? rapidgator = limits.Get(Hoster.RapidGator);
 
 // The hosts that Debrid-Link supports.
 IReadOnlyList<DownloaderHost> hosts = await client.Downloader.GetHostsAsync();
+
+// Remove links by id. The answer has the ids that were removed.
+IReadOnlyList<string> removed = await client.Downloader.RemoveAsync(linkId);
 ```
 
 One client can be reused for many requests and from several threads.
 
 ### Endpoints
 
-| Area         | Method                                     | API endpoint                                                      |
-|--------------|--------------------------------------------|-------------------------------------------------------------------|
-| `Account`    | `GetInfoAsync(cancellationToken)`          | `GET /account/infos`                                              |
-| `Downloader` | `GetLimitsAsync(all?, cancellationToken)`  | `GET /downloader/limits`, with `all` `GET /downloader/limits/all` |
-| `Downloader` | `GetHostsAsync(types?, cancellationToken)` | `GET /downloader/hosts`                                           |
+| Area         | Method                                                                      | API endpoint                                                      |
+|--------------|-----------------------------------------------------------------------------|-------------------------------------------------------------------|
+| `Account`    | `GetInfoAsync(cancellationToken)`                                           | `GET /account/infos`                                              |
+| `Downloader` | `GetLimitsAsync(all?, cancellationToken)`                                   | `GET /downloader/limits`, with `all` `GET /downloader/limits/all` |
+| `Downloader` | `GetHostsAsync(types?, cancellationToken)`                                  | `GET /downloader/hosts`                                           |
+| `Downloader` | `RemoveAsync(id, cancellationToken)`, `RemoveAsync(ids, cancellationToken)` | `DELETE /downloader/{ids}/remove`                                 |
 
 More endpoints will follow, grouped by the areas of the API documentation (the rest of `Downloader`, `Seedbox`, `Files`, ...).
 
@@ -77,6 +81,8 @@ More endpoints will follow, grouped by the areas of the API documentation (the r
 
 `Cdn`, `IpVersion` and `TwoFactorType` of `AccountSettings` are enums with an `Unknown` member (the first one, so it is also the default). It is used when Debrid-Link sends no value or a value that this version does not know yet, so a new option there does not make the call fail.
 `GetHostsAsync` lists the hosts that Debrid-Link supports. A host is online when its `Status` is 1 or higher (`IsOnline`). `Type` is `Host` for file hosts and `Stream` for streaming sites, `Protect` has no entries at the moment. With a key the list has 167 hosts (54 file hosts and 113 streaming sites) at the time of writing. Without a key it has only 43 file hosts, and an invalid key gives `badToken`. Without `types`, the answer has every host. Pass some `HostType`s to ask for some of them, for example `[HostType.Host]` for the file hosts. `Name` is the name of the host as Debrid-Link sends it. `Hoster` is the same host as an enum, and `Unknown` if the enum does not have it, which is the case for a host that Debrid-Link added after the library was written.
+
+`RemoveAsync` takes one id or several and answers with the ids that it was asked to remove. The API does not say whether a link with that id existed: an id with the right form that belongs to no link comes back as well. An id with a wrong form gives `badIds` (the table of the documentation has `badId`).
 
 `GetLimitsAsync` has the hosts that the account uses right now. With `all: true` it asks for the limits of all hosts (`/downloader/limits/all`). `UsagePercent` is a number from 0 to 100, `NextReset` is the time until the daily limits are reset (in most cases until the next day). The API sends both as a pair of numbers, `current` and `value`, and the library takes the one that matters. For every host, a `Limit` has `Current` (what is used today) and `Value` (the limit); `DaySize` is in bytes and `DayCount` in links.
 
@@ -121,6 +127,7 @@ dotnet run --project examples/DebridLinkSharp.Examples -- account
 dotnet run --project examples/DebridLinkSharp.Examples -- limits
 dotnet run --project examples/DebridLinkSharp.Examples -- limits-all
 dotnet run --project examples/DebridLinkSharp.Examples -- hosts
+dotnet run --project examples/DebridLinkSharp.Examples -- remove <id[,id...]>
 ```
 
 | Example      | What it shows                                                                                      |
@@ -129,12 +136,13 @@ dotnet run --project examples/DebridLinkSharp.Examples -- hosts
 | `limits`     | Show the daily limits and how much of them is used (the hosts that the account uses right now)     |
 | `limits-all` | Show the daily limits of every host                                                                |
 | `hosts`      | List the hosts that Debrid-Link supports, with their type and status                               |
+| `remove`     | Remove links from the account by id, separated by commas                                           |
 
 ## Known limits
 
-- **Early version:** Only `GET /account/infos`, `GET /downloader/limits` and `GET /downloader/hosts` are implemented so far. The other endpoints (the rest of the downloader, seedbox, ...) and OAuth2 helpers (device code, refresh token) follow.
+- **Early version:** Only `GET /account/infos`, `GET /downloader/limits`, `GET /downloader/hosts` and `DELETE /downloader/{ids}/remove` are implemented so far. The other endpoints (the rest of the downloader, seedbox, ...) and OAuth2 helpers (device code, refresh token) follow.
 - **Network and privacy:** Every call sends your API key to `debrid-link.com` over HTTPS. `BaseUrl` can be pointed at your own proxy.
-- **OAuth2 scopes:** With an OAuth2 access token instead of a private API key, the token needs the scope `get.account` for the account and `get.downloader` for the limits.
+- **OAuth2 scopes:** With an OAuth2 access token instead of a private API key, the token needs the scope `get.account` for the account, `get.downloader` for the limits and the hosts, and `delete.downloader` for removing links.
 - **Personal use:** The documentation of Debrid-Link says that the API is not meant to resell their services and that an account is for personal use.
 - **No rate limiting:** The library does not slow down or repeat requests. If you send too many requests, the API answers with `floodDetected` and blocks the account for about an hour, so space your requests yourself.
 

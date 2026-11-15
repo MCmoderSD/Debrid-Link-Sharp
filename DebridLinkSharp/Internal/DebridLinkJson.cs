@@ -13,6 +13,7 @@ namespace DebridLinkSharp.Internal;
 [JsonSerializable(typeof(AccountInfo))]
 [JsonSerializable(typeof(DownloaderLimits))]
 [JsonSerializable(typeof(DownloaderHost[]))]
+[JsonSerializable(typeof(string[]))]
 [JsonSerializable(typeof(Cdn))]
 [JsonSerializable(typeof(IpVersion))]
 [JsonSerializable(typeof(TwoFactorType))]
