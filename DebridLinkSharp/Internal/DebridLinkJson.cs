@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using DebridLinkSharp.Models.Account;
+using DebridLinkSharp.Models.Downloader;
 
 namespace DebridLinkSharp.Internal;
 
@@ -10,6 +11,7 @@ namespace DebridLinkSharp.Internal;
 )]
 
 [JsonSerializable(typeof(AccountInfo))]
+[JsonSerializable(typeof(DownloaderLimits))]
 [JsonSerializable(typeof(Cdn))]
 [JsonSerializable(typeof(IpVersion))]
 [JsonSerializable(typeof(TwoFactorType))]

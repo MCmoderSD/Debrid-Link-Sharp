@@ -18,7 +18,10 @@ public sealed class DebridLinkClient
         var http = new DebridLinkHttp(httpClient, apiKey.Trim(), (options ?? new DebridLinkClientOptions()).CloneAndValidate());
         
         Account = new AccountApi(http);
+        Downloader = new DownloaderApi(http);
     }
 
     public AccountApi Account { get; }
+
+    public DownloaderApi Downloader { get; }
 }

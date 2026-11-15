@@ -1,6 +1,6 @@
 # DebridLinkSharp
 
-A small .NET client for the **[Debrid-Link](https://debrid-link.com) API v2**. For now it reads your account: the account type, the premium time left, the points and the settings, as plain objects.
+A small .NET client for the **[Debrid-Link](https://debrid-link.com) API v2**. For now it reads your account: the account type, the premium time left, the points and the settings, as plain objects. It also reads the daily limits of the downloader.
 
 - Targets `net11.0` and has no third-party dependencies: HTTP comes from `System.Net.Http`, JSON from `System.Text.Json`.
 - Plain model classes. The JSON handling uses serializers generated at compile time, so it needs no reflection.
@@ -21,6 +21,7 @@ The package targets `net11.0`.
 ```csharp
 using DebridLinkSharp;
 using DebridLinkSharp.Models.Account;
+using DebridLinkSharp.Models.Downloader;
 
 // A private API key (https://debrid-link.com/webapp/apikey) or an OAuth2 access token.
 var client = new DebridLinkClient(apiKey);
@@ -30,30 +31,48 @@ AccountInfo account = await client.Account.GetInfoAsync();
 Console.WriteLine($"{account.Username}: {account.AccountType}, {account.PremiumLeft.TotalDays:0} days of premium left, {account.Points} points");
 ```
 
+```csharp
+// The daily limits. By default the answer has the hosts that the account uses right now, with all: true every host.
+DownloaderLimits limits = await client.Downloader.GetLimitsAsync(all: true);
+
+Console.WriteLine($"{limits.UsagePercent:0.##} % used, next reset in {limits.NextReset.TotalHours:0.#} hours");
+
+// The limits of a single host.
+HosterLimit? rapidgator = limits.Get(Hoster.RapidGator);
+```
+
 One client can be reused for many requests and from several threads.
 
 ### Endpoints
 
-| Area      | Method                            | API endpoint         |
-|-----------|-----------------------------------|----------------------|
-| `Account` | `GetInfoAsync(cancellationToken)` | `GET /account/infos` |
+| Area         | Method                                    | API endpoint                                                      |
+|--------------|-------------------------------------------|-------------------------------------------------------------------|
+| `Account`    | `GetInfoAsync(cancellationToken)`         | `GET /account/infos`                                              |
+| `Downloader` | `GetLimitsAsync(all?, cancellationToken)` | `GET /downloader/limits`, with `all` `GET /downloader/limits/all` |
 
-More endpoints will follow, grouped by the areas of the API documentation (`Downloader`, `Seedbox`, `Files`, ...).
+More endpoints will follow, grouped by the areas of the API documentation (the rest of `Downloader`, `Seedbox`, `Files`, ...).
 
 ### The data model
 
-| Type              | Members                                                                                                                                                         |
-|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `AccountInfo`     | `Username`, `Email`, `EmailVerified`, `AccountType`, `PremiumLeft`, `Points`, `RegisterDate`, `ServerDetected`, `Settings`, `AvatarUrl` and `UpgradeAccountUrl` |
-| `AccountSettings` | `Https`, `ThemeDark`, `HideOldLinks`, `Cdn`, `TwoFactorType`, `EmailsNews`, `EmailsAccount`, `EmailsSupport`, `IpVersion`                                       |
-| `AccountType`     | `Free`, `Premium`, `LifetimePremium`                                                                                                                            |
-| `Cdn`             | `Unknown`, `Auto`, `Direct`, `Cloudflare`, `Scaleway`                                                                                                           |
-| `IpVersion`       | `Unknown`, `Auto`, `IPv4`                                                                                                                                       |
-| `TwoFactorType`   | `Unknown`, `Email`, `Otp`                                                                                                                                       |
+| Type               | Members                                                                                                                                                         |
+|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `AccountInfo`      | `Username`, `Email`, `EmailVerified`, `AccountType`, `PremiumLeft`, `Points`, `RegisterDate`, `ServerDetected`, `Settings`, `AvatarUrl` and `UpgradeAccountUrl` |
+| `AccountSettings`  | `Https`, `ThemeDark`, `HideOldLinks`, `Cdn`, `TwoFactorType`, `EmailsNews`, `EmailsAccount`, `EmailsSupport`, `IpVersion`                                       |
+| `AccountType`      | `Free`, `Premium`, `LifetimePremium`                                                                                                                            |
+| `Cdn`              | `Unknown`, `Auto`, `Direct`, `Cloudflare`, `Scaleway`                                                                                                           |
+| `IpVersion`        | `Unknown`, `Auto`, `IPv4`                                                                                                                                       |
+| `TwoFactorType`    | `Unknown`, `Email`, `Otp`                                                                                                                                       |
+| `DownloaderLimits` | `UsagePercent`, `NextReset`, `Hosters`                                                                                                                          |
+| `HosterLimit`      | `Hoster`, `DaySize`, `DayCount`                                                                                                                                 |
+| `Limit`            | `Current`, `Value`                                                                                                                                              |
+| `Hoster`           | `Unknown`, `Other` and one member for every host, for example `RapidGator`, `Mega`, `MediaFire`, `OneFichier`                                                   |
 
 `PremiumLeft` is a `TimeSpan` and always zero for a free account. `RegisterDate` is a `DateOnly`. `Username`, `Email`, `Settings`, `AvatarUrl` and `UpgradeAccountUrl` are always set. `Email` is already masked by Debrid-Link (`p**d@deb*******k`). `UpgradeAccountUrl` and `AvatarUrl` are links specific to your account, so do not log or share them.
 
 `Cdn`, `IpVersion` and `TwoFactorType` of `AccountSettings` are enums with an `Unknown` member (the first one, so it is also the default). It is used when Debrid-Link sends no value or a value that this version does not know yet, so a new option there does not make the call fail.
+`GetLimitsAsync` has the hosts that the account uses right now. With `all: true` it asks for the limits of all hosts (`/downloader/limits/all`). `UsagePercent` is a number from 0 to 100, `NextReset` is the time until the daily limits are reset (in most cases until the next day). The API sends both as a pair of numbers, `current` and `value`, and the library takes the one that matters. For every host, a `Limit` has `Current` (what is used today) and `Value` (the limit); `DaySize` is in bytes and `DayCount` in links.
+
+`Hoster` has a member for every host that Debrid-Link supported when the library was written (43). A host that is not in it is read as `Unknown`, so a new host does not make a call fail, but its name is not kept: the enum has to be extended then. The API sends the limits only for some hosts and one entry for all the others together, which the library calls `Hoster.Other`. `DownloaderLimits.Get(hoster)` gives the limits of one host out of an answer: the entry of the host, or the `Other` entry if the host has none of its own, or `null` if the answer has neither. Use it with `GetLimitsAsync(all: true)`, because the default answer only has the hosts that are in use.
 
 ## Options
 
@@ -91,17 +110,21 @@ The API key is read from the environment variable `DEBRID_LINK_API_KEY`, so it d
 ```bash
 export DEBRID_LINK_API_KEY=your-key
 dotnet run --project examples/DebridLinkSharp.Examples -- account
+dotnet run --project examples/DebridLinkSharp.Examples -- limits
+dotnet run --project examples/DebridLinkSharp.Examples -- limits-all
 ```
 
-| Example   | What it shows                                                                                      |
-|-----------|----------------------------------------------------------------------------------------------------|
-| `account` | Show everything Debrid-Link tells about the account, in sections, and handle the errors of the API |
+| Example      | What it shows                                                                                      |
+|--------------|----------------------------------------------------------------------------------------------------|
+| `account`    | Show everything Debrid-Link tells about the account, in sections, and handle the errors of the API |
+| `limits`     | Show the daily limits and how much of them is used (the hosts that the account uses right now)     |
+| `limits-all` | Show the daily limits of every host                                                                |
 
 ## Known limits
 
-- **Early version:** Only `GET /account/infos` is implemented so far. The other endpoints (downloader, seedbox, ...) and OAuth2 helpers (device code, refresh token) follow.
+- **Early version:** Only `GET /account/infos` and `GET /downloader/limits` are implemented so far. The other endpoints (the rest of the downloader, seedbox, ...) and OAuth2 helpers (device code, refresh token) follow.
 - **Network and privacy:** Every call sends your API key to `debrid-link.com` over HTTPS. `BaseUrl` can be pointed at your own proxy.
-- **OAuth2 scopes:** With an OAuth2 access token instead of a private API key, the token needs the scope `get.account`.
+- **OAuth2 scopes:** With an OAuth2 access token instead of a private API key, the token needs the scope `get.account` for the account and `get.downloader` for the limits.
 - **Personal use:** The documentation of Debrid-Link says that the API is not meant to resell their services and that an account is for personal use.
 - **No rate limiting:** The library does not slow down or repeat requests. If you send too many requests, the API answers with `floodDetected` and blocks the account for about an hour, so space your requests yourself.
 
