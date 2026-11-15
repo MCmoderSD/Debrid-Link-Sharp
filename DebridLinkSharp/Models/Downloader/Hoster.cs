@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace DebridLinkSharp.Models.Downloader;
 
-// The hosts that Debrid-Link supports, as the API names them. A new host is added here when Debrid-Link adds it.
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public enum Hoster
 {
