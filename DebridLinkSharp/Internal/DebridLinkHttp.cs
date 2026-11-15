@@ -65,7 +65,6 @@ internal sealed class DebridLinkHttp(HttpClient httpClient, string apiKey, Debri
         }
     }
 
-    // A list that came from the API must not contain null entries.
     public static void RequireNoNulls<T>(T[] items, string what) where T : class
     {
         if (Array.IndexOf(items, null) >= 0)

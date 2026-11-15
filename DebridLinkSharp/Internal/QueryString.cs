@@ -6,7 +6,6 @@ internal static class QueryString
 
     public static string? Pair(string name, string? value) => value == null ? null : $"{name}={Uri.EscapeDataString(value)}";
 
-    // A list is sent comma-separated. The commas stay as they are, only the items are escaped.
     public static string? Pair(string name, IEnumerable<string>? values) => values == null ? null : $"{name}={string.Join(',', values.Select(Uri.EscapeDataString))}";
 
     public static string Append(string path, params string?[] pairs)
