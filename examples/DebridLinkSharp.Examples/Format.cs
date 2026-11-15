@@ -2,7 +2,6 @@ namespace Examples;
 
 internal static class Format
 {
-    // 1536 becomes "1.5 KiB".
     public static string Size(long bytes)
     {
         string[] units = ["B", "KiB", "MiB", "GiB", "TiB"];

@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 
 namespace DebridLinkSharp.Internal;
 
-// The API sends some limits as { "current": ..., "value": ... }. These converters take the one number that matters out of that object.
 internal static class CurrentValuePair
 {
     public static (double? Current, double? Value) Read(ref Utf8JsonReader reader)
@@ -35,7 +34,6 @@ internal static class CurrentValuePair
             }
             else
             {
-                // Another property: skip its value, which can be anything.
                 reader.Read();
                 reader.Skip();
             }
@@ -55,7 +53,6 @@ internal static class CurrentValuePair
     }
 }
 
-// usagePercent: how much of the daily limit is used, from 0 to 100. The API also sends the 100 as "value", which is not needed.
 internal sealed class UsagePercentConverter : JsonConverter<double>
 {
     public override double Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -72,8 +69,6 @@ internal sealed class UsagePercentConverter : JsonConverter<double>
     }
 }
 
-// nextResetSeconds: the time until the next reset of the daily limits, as the number of seconds in "value".
-// The API also sends "current" (-1 in the example of the documentation), which is not used.
 internal sealed class ResetPeriodConverter : JsonConverter<TimeSpan>
 {
     public override TimeSpan Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
