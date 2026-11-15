@@ -1,3 +1,4 @@
+using DebridLinkSharp.Api;
 using DebridLinkSharp.Internal;
 
 namespace DebridLinkSharp;

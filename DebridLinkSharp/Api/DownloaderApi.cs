@@ -1,7 +1,7 @@
 using DebridLinkSharp.Internal;
 using DebridLinkSharp.Models.Downloader;
 
-namespace DebridLinkSharp;
+namespace DebridLinkSharp.Api;
 
 public sealed class DownloaderApi
 {

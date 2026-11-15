@@ -1,7 +1,7 @@
 using DebridLinkSharp.Internal;
 using DebridLinkSharp.Models.Account;
 
-namespace DebridLinkSharp;
+namespace DebridLinkSharp.Api;
 
 public sealed class AccountApi
 {
