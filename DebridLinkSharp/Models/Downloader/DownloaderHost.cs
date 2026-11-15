@@ -7,7 +7,6 @@ public sealed class DownloaderHost
 {
     public string Name { get; init; } = "";
 
-    // The same host as the Hoster enum. It is Unknown if the enum does not have the host, which is the case for every streaming site and for some file hosts.
     [JsonIgnore]
     public Hoster Hoster => HosterNames.Parse(Name);
 
@@ -22,7 +21,6 @@ public sealed class DownloaderHost
 
     public IReadOnlyList<string> Regexs { get; init; } = [];
 
-    // Debrid-Link says that a host is online when its status is 1 or higher.
     [JsonIgnore]
     public bool IsOnline => Status >= 1;
 }
