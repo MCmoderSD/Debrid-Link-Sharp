@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="DebridLinkSharp/DebridLinkSharp.csproj"/>
+  <Project Path="examples/DebridLinkSharp.Examples/DebridLinkSharp.Examples.csproj"/>
+  <Project Path="tests/DebridLinkSharp.Tests/DebridLinkSharp.Tests.csproj"/>
+</Solution>

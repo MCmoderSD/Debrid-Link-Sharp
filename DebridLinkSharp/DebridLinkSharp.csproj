@@ -1,0 +1,55 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+
+        <!-- Build -->
+        <TargetFramework>net11.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <IsAotCompatible>true</IsAotCompatible>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+        <!-- Runtime-native async: cleaner stack traces and less overhead in the async calls -->
+        <Features>$(Features);runtime-async=on</Features>
+
+        <!-- XML comments are removed for now; remove this NoWarn when they come back -->
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+        <!-- NuGet: identity -->
+        <PackageId>DebridLinkSharp</PackageId>
+        <Version>0.1.0</Version>
+        <Authors>MCmoderSD</Authors>
+
+        <!-- NuGet: description -->
+        <Title>Debrid-Link-Sharp</Title>
+        <Description>Small .NET client for the Debrid-Link API v2: reads the account information, with typed models and typed errors.</Description>
+        <PackageTags>debrid-link;debrid;api;client;account</PackageTags>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageIcon>icon.png</PackageIcon>
+
+        <!-- NuGet: license -->
+        <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+        <Copyright>Copyright (c) 2026, Seraphin Berger</Copyright>
+
+        <!-- NuGet: repository -->
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/MCmoderSD/Debrid-Link-Sharp</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/MCmoderSD/Debrid-Link-Sharp</PackageProjectUrl>
+
+        <!-- NuGet: source link and symbols -->
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\LICENSE" Pack="true" PackagePath="\" Visible="false"/>
+        <None Include="..\README.md" Pack="true" PackagePath="\" Visible="false"/>
+        <None Include="..\icon\icon.png" Pack="true" PackagePath="\" Visible="false"/>
+
+        <!-- The tests call the internal classes directly -->
+        <InternalsVisibleTo Include="DebridLinkSharp.Tests"/>
+    </ItemGroup>
+
+</Project>
