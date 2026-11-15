@@ -12,9 +12,39 @@ public sealed class DownloaderApi
         _http = http;
     }
 
-    public async Task<IReadOnlyList<DownloaderHost>> GetHostsAsync(CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<DownloaderHost>> GetHostsAsync(IEnumerable<HostType>? types = null, CancellationToken cancellationToken = default)
     {
-        var value = await _http.SendAsync(HttpMethod.Get, "downloader/hosts", null, cancellationToken).ConfigureAwait(false);
+        List<string>? names = null;
+
+        if (types != null)
+        {
+            names = [];
+            foreach (var type in types)
+            {
+                if (type == HostType.Unknown || !Enum.IsDefined(type))
+                {
+                    throw new ArgumentException($"The host type {type} cannot be requested.", nameof(types));
+                }
+
+                var name = type.ToString().ToLowerInvariant();
+                if (!names.Contains(name))
+                {
+                    names.Add(name);
+                }
+            }
+
+            if (names.Count == 0)
+            {
+                throw new ArgumentException("Pass at least one host type, or null for all of them.", nameof(types));
+            }
+        }
+
+        return GetHostsCoreAsync(QueryString.Append("downloader/hosts", QueryString.Pair("types", names)), cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<DownloaderHost>> GetHostsCoreAsync(string path, CancellationToken cancellationToken)
+    {
+        var value = await _http.SendAsync(HttpMethod.Get, path, null, cancellationToken).ConfigureAwait(false);
         var hosts = DebridLinkHttp.Deserialize(value, DebridLinkJsonContext.Default.DownloaderHostArray, "a list of hosts");
         DebridLinkHttp.RequireNoNulls(hosts, "a list of hosts");
         return hosts;

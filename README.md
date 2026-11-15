@@ -48,11 +48,11 @@ One client can be reused for many requests and from several threads.
 
 ### Endpoints
 
-| Area         | Method                                    | API endpoint                                                      |
-|--------------|-------------------------------------------|-------------------------------------------------------------------|
-| `Account`    | `GetInfoAsync(cancellationToken)`         | `GET /account/infos`                                              |
-| `Downloader` | `GetLimitsAsync(all?, cancellationToken)` | `GET /downloader/limits`, with `all` `GET /downloader/limits/all` |
-| `Downloader` | `GetHostsAsync(cancellationToken)`        | `GET /downloader/hosts`                                           |
+| Area         | Method                                     | API endpoint                                                      |
+|--------------|--------------------------------------------|-------------------------------------------------------------------|
+| `Account`    | `GetInfoAsync(cancellationToken)`          | `GET /account/infos`                                              |
+| `Downloader` | `GetLimitsAsync(all?, cancellationToken)`  | `GET /downloader/limits`, with `all` `GET /downloader/limits/all` |
+| `Downloader` | `GetHostsAsync(types?, cancellationToken)` | `GET /downloader/hosts`                                           |
 
 More endpoints will follow, grouped by the areas of the API documentation (the rest of `Downloader`, `Seedbox`, `Files`, ...).
 
@@ -66,7 +66,7 @@ More endpoints will follow, grouped by the areas of the API documentation (the r
 | `Cdn`              | `Unknown`, `Auto`, `Direct`, `Cloudflare`, `Scaleway`                                                                                                           |
 | `IpVersion`        | `Unknown`, `Auto`, `IPv4`                                                                                                                                       |
 | `TwoFactorType`    | `Unknown`, `Email`, `Otp`                                                                                                                                       |
-| `DownloaderHost`   | `Hoster`, `Type`, `Status`, `IsFree`, `IsOnline`, `Domains`, `Regexs`                                                                                           |
+| `DownloaderHost`   | `Name`, `Hoster`, `Type`, `Status`, `IsFree`, `IsOnline`, `Domains`, `Regexs`                                                                                   |
 | `HostType`         | `Unknown`, `Host`, `Stream`, `Protect`                                                                                                                          |
 | `DownloaderLimits` | `UsagePercent`, `NextReset`, `Hosters`                                                                                                                          |
 | `HosterLimit`      | `Hoster`, `DaySize`, `DayCount`                                                                                                                                 |
@@ -76,7 +76,7 @@ More endpoints will follow, grouped by the areas of the API documentation (the r
 `PremiumLeft` is a `TimeSpan` and always zero for a free account. `RegisterDate` is a `DateOnly`. `Username`, `Email`, `Settings`, `AvatarUrl` and `UpgradeAccountUrl` are always set. `Email` is already masked by Debrid-Link (`p**d@deb*******k`). `UpgradeAccountUrl` and `AvatarUrl` are links specific to your account, so do not log or share them.
 
 `Cdn`, `IpVersion` and `TwoFactorType` of `AccountSettings` are enums with an `Unknown` member (the first one, so it is also the default). It is used when Debrid-Link sends no value or a value that this version does not know yet, so a new option there does not make the call fail.
-`GetHostsAsync` lists the hosts that Debrid-Link supports. A host is online when its `Status` is 1 or higher (`IsOnline`). `Type` is `Host` for file hosts and `Stream` for streaming sites, `Protect` has no entries at the moment. With a key the list has 167 hosts (54 file hosts and 113 streaming sites) at the time of writing. Without a key it has only 43 file hosts, and an invalid key gives `badToken`.
+`GetHostsAsync` lists the hosts that Debrid-Link supports. A host is online when its `Status` is 1 or higher (`IsOnline`). `Type` is `Host` for file hosts and `Stream` for streaming sites, `Protect` has no entries at the moment. With a key the list has 167 hosts (54 file hosts and 113 streaming sites) at the time of writing. Without a key it has only 43 file hosts, and an invalid key gives `badToken`. Without `types`, the answer has every host. Pass some `HostType`s to ask for some of them, for example `[HostType.Host]` for the file hosts. `Name` is the name of the host as Debrid-Link sends it. `Hoster` is the same host as an enum, and `Unknown` if the enum does not have it, which is the case for every streaming site and for some file hosts.
 
 `GetLimitsAsync` has the hosts that the account uses right now. With `all: true` it asks for the limits of all hosts (`/downloader/limits/all`). `UsagePercent` is a number from 0 to 100, `NextReset` is the time until the daily limits are reset (in most cases until the next day). The API sends both as a pair of numbers, `current` and `value`, and the library takes the one that matters. For every host, a `Limit` has `Current` (what is used today) and `Value` (the limit); `DaySize` is in bytes and `DayCount` in links.
 
@@ -128,7 +128,7 @@ dotnet run --project examples/DebridLinkSharp.Examples -- hosts
 | `account`    | Show everything Debrid-Link tells about the account, in sections, and handle the errors of the API |
 | `limits`     | Show the daily limits and how much of them is used (the hosts that the account uses right now)     |
 | `limits-all` | Show the daily limits of every host                                                                |
-| `hosts`      | List the hosts that Debrid-Link supports, with their status                                        |
+| `hosts`      | List the hosts that Debrid-Link supports, with their type and status                               |
 
 ## Known limits
 

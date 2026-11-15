@@ -5,9 +5,11 @@ namespace DebridLinkSharp.Models.Downloader;
 
 public sealed class DownloaderHost
 {
-    [JsonPropertyName("name")]
-    [JsonConverter(typeof(HosterConverter))]
-    public Hoster Hoster { get; init; }
+    public string Name { get; init; } = "";
+
+    // The same host as the Hoster enum. It is Unknown if the enum does not have the host, which is the case for every streaming site and for some file hosts.
+    [JsonIgnore]
+    public Hoster Hoster => HosterNames.Parse(Name);
 
     [JsonConverter(typeof(HostTypeConverter))]
     public HostType Type { get; init; }
