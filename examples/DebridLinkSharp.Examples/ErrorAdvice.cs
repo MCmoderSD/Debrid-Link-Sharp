@@ -16,6 +16,7 @@ internal static class ErrorAdvice
     private static string Advice(DebridLinkApiException ex) => ex.ErrorCode switch
     {
         DebridLinkErrors.BadToken => "The API key is invalid or expired. Create a new one.",
+        DebridLinkErrors.BadId or DebridLinkErrors.BadIds => "An id is not valid. Use the ids of the links of the account.",
         DebridLinkErrors.FloodDetected => "Too many requests. The account is blocked for about an hour.",
         DebridLinkErrors.UnverifiedEmail => "Verify the e-mail address of the account first, or upgrade to premium.",
         _ => ex.Message

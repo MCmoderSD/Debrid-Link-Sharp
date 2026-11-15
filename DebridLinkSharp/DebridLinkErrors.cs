@@ -20,6 +20,8 @@ public static class DebridLinkErrors
 
     public const string BadId = "badId";
 
+    public const string BadIds = "badIds";
+
     public const string InfringingFile = "infringingFile";
 
     internal static string? Describe(string errorCode)
@@ -33,7 +35,7 @@ public static class DebridLinkErrors
             FloodDetected => "Too many requests, the account is blocked for about an hour.",
             FreeServerOverload => "The free servers are overloaded, please retry later.",
             UnverifiedEmail => "A free account has to verify its email address first.",
-            BadId => "The provided ID(s) are invalid.",
+            BadId or BadIds => "The provided ID(s) are invalid.",
             InfringingFile => "The file is unavailable for legal reasons.",
             _ => null
         };
