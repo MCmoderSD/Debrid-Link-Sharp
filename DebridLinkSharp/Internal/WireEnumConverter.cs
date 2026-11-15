@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DebridLinkSharp.Models.Account;
+using DebridLinkSharp.Models.Downloader;
 
 namespace DebridLinkSharp.Internal;
 
@@ -42,3 +43,5 @@ internal sealed class CdnConverter() : WireEnumConverter<Cdn>([("auto", Cdn.Auto
 internal sealed class IpVersionConverter() : WireEnumConverter<IpVersion>([("auto", IpVersion.Auto), ("v4", IpVersion.IPv4)]);
 
 internal sealed class TwoFactorTypeConverter() : WireEnumConverter<TwoFactorType>([("email", TwoFactorType.Email), ("otp", TwoFactorType.Otp)]);
+
+internal sealed class HostTypeConverter() : WireEnumConverter<HostType>([("host", HostType.Host), ("stream", HostType.Stream), ("protect", HostType.Protect)]);

@@ -65,6 +65,14 @@ internal sealed class DebridLinkHttp(HttpClient httpClient, string apiKey, Debri
         }
     }
 
+    public static void RequireNoNulls<T>(T[] items, string what) where T : class
+    {
+        if (Array.IndexOf(items, null) >= 0)
+        {
+            throw new DebridLinkServiceException(DebridLinkServiceError.InvalidResponse, $"Debrid-Link answered with {what} that contains an empty entry.");
+        }
+    }
+
     private static JsonElement ReadValue(HttpStatusCode status, string body)
     {
         JsonDocument document;

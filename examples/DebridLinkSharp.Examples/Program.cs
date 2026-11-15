@@ -11,6 +11,7 @@ internal static class Program
     {
         ["limits"] = new Example("limits", "Show the daily limits and how much of them is used", apiKey => LimitsExample.RunAsync(apiKey)),
         ["limits-all"] = new Example("limits-all", "Show the daily limits of every host", apiKey => LimitsExample.RunAsync(apiKey, all: true)),
+        ["hosts"] = new Example("hosts", "List the hosts that Debrid-Link supports", apiKey => HostsExample.RunAsync(apiKey)),
         ["account"] = new Example("account", "Show everything Debrid-Link tells about the account, in sections", AccountInfoExample.RunAsync)
     };
 

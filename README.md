@@ -39,40 +39,48 @@ Console.WriteLine($"{limits.UsagePercent:0.##} % used, next reset in {limits.Nex
 
 // The limits of a single host.
 HosterLimit? rapidgator = limits.Get(Hoster.RapidGator);
+
+// The hosts that Debrid-Link supports.
+IReadOnlyList<DownloaderHost> hosts = await client.Downloader.GetHostsAsync();
 ```
 
 One client can be reused for many requests and from several threads.
 
 ### Endpoints
 
-| Area         | Method                                    | API endpoint                                                      |
-|--------------|-------------------------------------------|-------------------------------------------------------------------|
-| `Account`    | `GetInfoAsync(cancellationToken)`         | `GET /account/infos`                                              |
-| `Downloader` | `GetLimitsAsync(all?, cancellationToken)` | `GET /downloader/limits`, with `all` `GET /downloader/limits/all` |
+| Area         | Method                                     | API endpoint                                                      |
+|--------------|--------------------------------------------|-------------------------------------------------------------------|
+| `Account`    | `GetInfoAsync(cancellationToken)`          | `GET /account/infos`                                              |
+| `Downloader` | `GetLimitsAsync(all?, cancellationToken)`  | `GET /downloader/limits`, with `all` `GET /downloader/limits/all` |
+| `Downloader` | `GetHostsAsync(types?, cancellationToken)` | `GET /downloader/hosts`                                           |
 
 More endpoints will follow, grouped by the areas of the API documentation (the rest of `Downloader`, `Seedbox`, `Files`, ...).
 
 ### The data model
 
-| Type               | Members                                                                                                                                                         |
-|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `AccountInfo`      | `Username`, `Email`, `EmailVerified`, `AccountType`, `PremiumLeft`, `Points`, `RegisterDate`, `ServerDetected`, `Settings`, `AvatarUrl` and `UpgradeAccountUrl` |
-| `AccountSettings`  | `Https`, `ThemeDark`, `HideOldLinks`, `Cdn`, `TwoFactorType`, `EmailsNews`, `EmailsAccount`, `EmailsSupport`, `IpVersion`                                       |
-| `AccountType`      | `Free`, `Premium`, `LifetimePremium`                                                                                                                            |
-| `Cdn`              | `Unknown`, `Auto`, `Direct`, `Cloudflare`, `Scaleway`                                                                                                           |
-| `IpVersion`        | `Unknown`, `Auto`, `IPv4`                                                                                                                                       |
-| `TwoFactorType`    | `Unknown`, `Email`, `Otp`                                                                                                                                       |
-| `DownloaderLimits` | `UsagePercent`, `NextReset`, `Hosters`                                                                                                                          |
-| `HosterLimit`      | `Hoster`, `DaySize`, `DayCount`                                                                                                                                 |
-| `Limit`            | `Current`, `Value`                                                                                                                                              |
-| `Hoster`           | `Unknown`, `Other` and one member for every host, for example `RapidGator`, `Mega`, `MediaFire`, `OneFichier`                                                   |
+| Type               | Members                                                                                                                                                                               |
+|--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `AccountInfo`      | `Username`, `Email`, `EmailVerified`, `AccountType`, `PremiumLeft`, `Points`, `RegisterDate`, `ServerDetected`, `Settings`, `AvatarUrl` and `UpgradeAccountUrl`                       |
+| `AccountSettings`  | `Https`, `ThemeDark`, `HideOldLinks`, `Cdn`, `TwoFactorType`, `EmailsNews`, `EmailsAccount`, `EmailsSupport`, `IpVersion`                                                             |
+| `AccountType`      | `Free`, `Premium`, `LifetimePremium`                                                                                                                                                  |
+| `Cdn`              | `Unknown`, `Auto`, `Direct`, `Cloudflare`, `Scaleway`                                                                                                                                 |
+| `IpVersion`        | `Unknown`, `Auto`, `IPv4`                                                                                                                                                             |
+| `TwoFactorType`    | `Unknown`, `Email`, `Otp`                                                                                                                                                             |
+| `DownloaderHost`   | `Name`, `Hoster`, `Type`, `Status`, `IsFree`, `IsOnline`, `Domains`, `Regexs`                                                                                                         |
+| `HostType`         | `Unknown`, `Host`, `Stream`, `Protect`                                                                                                                                                |
+| `DownloaderLimits` | `UsagePercent`, `NextReset`, `Hosters`                                                                                                                                                |
+| `HosterLimit`      | `Hoster`, `DaySize`, `DayCount`                                                                                                                                                       |
+| `Limit`            | `Current`, `Value`                                                                                                                                                                    |
+| `Hoster`           | `Unknown`, `Other`, then a member for every file host (`RapidGator`, `Mega`, `OneFichier`, ...) and, at the end, for every streaming site (`Dailymotion`, `Soundcloud`, `Vimeo`, ...) |
 
 `PremiumLeft` is a `TimeSpan` and always zero for a free account. `RegisterDate` is a `DateOnly`. `Username`, `Email`, `Settings`, `AvatarUrl` and `UpgradeAccountUrl` are always set. `Email` is already masked by Debrid-Link (`p**d@deb*******k`). `UpgradeAccountUrl` and `AvatarUrl` are links specific to your account, so do not log or share them.
 
 `Cdn`, `IpVersion` and `TwoFactorType` of `AccountSettings` are enums with an `Unknown` member (the first one, so it is also the default). It is used when Debrid-Link sends no value or a value that this version does not know yet, so a new option there does not make the call fail.
+`GetHostsAsync` lists the hosts that Debrid-Link supports. A host is online when its `Status` is 1 or higher (`IsOnline`). `Type` is `Host` for file hosts and `Stream` for streaming sites, `Protect` has no entries at the moment. With a key the list has 167 hosts (54 file hosts and 113 streaming sites) at the time of writing. Without a key it has only 43 file hosts, and an invalid key gives `badToken`. Without `types`, the answer has every host. Pass some `HostType`s to ask for some of them, for example `[HostType.Host]` for the file hosts. `Name` is the name of the host as Debrid-Link sends it. `Hoster` is the same host as an enum, and `Unknown` if the enum does not have it, which is the case for a host that Debrid-Link added after the library was written.
+
 `GetLimitsAsync` has the hosts that the account uses right now. With `all: true` it asks for the limits of all hosts (`/downloader/limits/all`). `UsagePercent` is a number from 0 to 100, `NextReset` is the time until the daily limits are reset (in most cases until the next day). The API sends both as a pair of numbers, `current` and `value`, and the library takes the one that matters. For every host, a `Limit` has `Current` (what is used today) and `Value` (the limit); `DaySize` is in bytes and `DayCount` in links.
 
-`Hoster` has a member for every host that Debrid-Link supported when the library was written (43). A host that is not in it is read as `Unknown`, so a new host does not make a call fail, but its name is not kept: the enum has to be extended then. The API sends the limits only for some hosts and one entry for all the others together, which the library calls `Hoster.Other`. `DownloaderLimits.Get(hoster)` gives the limits of one host out of an answer: the entry of the host, or the `Other` entry if the host has none of its own, or `null` if the answer has neither. Use it with `GetLimitsAsync(all: true)`, because the default answer only has the hosts that are in use.
+`Hoster` has a member for every host that Debrid-Link lists for a key when the library was written: 54 file hosts, then 113 streaming sites, 167 in all (the same split as the `Type` of a `DownloaderHost`). A host that is not in it is read as `Unknown`, so a new host does not make a call fail, but its name is not kept: the enum has to be extended then. The API sends the limits only for some hosts and one entry for all the others together, which the library calls `Hoster.Other`. `DownloaderLimits.Get(hoster)` gives the limits of one host out of an answer: the entry of the host, or the `Other` entry if the host has none of its own, or `null` if the answer has neither. Use it with `GetLimitsAsync(all: true)`, because the default answer only has the hosts that are in use.
 
 ## Options
 
@@ -112,6 +120,7 @@ export DEBRID_LINK_API_KEY=your-key
 dotnet run --project examples/DebridLinkSharp.Examples -- account
 dotnet run --project examples/DebridLinkSharp.Examples -- limits
 dotnet run --project examples/DebridLinkSharp.Examples -- limits-all
+dotnet run --project examples/DebridLinkSharp.Examples -- hosts
 ```
 
 | Example      | What it shows                                                                                      |
@@ -119,10 +128,11 @@ dotnet run --project examples/DebridLinkSharp.Examples -- limits-all
 | `account`    | Show everything Debrid-Link tells about the account, in sections, and handle the errors of the API |
 | `limits`     | Show the daily limits and how much of them is used (the hosts that the account uses right now)     |
 | `limits-all` | Show the daily limits of every host                                                                |
+| `hosts`      | List the hosts that Debrid-Link supports, with their type and status                               |
 
 ## Known limits
 
-- **Early version:** Only `GET /account/infos` and `GET /downloader/limits` are implemented so far. The other endpoints (the rest of the downloader, seedbox, ...) and OAuth2 helpers (device code, refresh token) follow.
+- **Early version:** Only `GET /account/infos`, `GET /downloader/limits` and `GET /downloader/hosts` are implemented so far. The other endpoints (the rest of the downloader, seedbox, ...) and OAuth2 helpers (device code, refresh token) follow.
 - **Network and privacy:** Every call sends your API key to `debrid-link.com` over HTTPS. `BaseUrl` can be pointed at your own proxy.
 - **OAuth2 scopes:** With an OAuth2 access token instead of a private API key, the token needs the scope `get.account` for the account and `get.downloader` for the limits.
 - **Personal use:** The documentation of Debrid-Link says that the API is not meant to resell their services and that an account is for personal use.
