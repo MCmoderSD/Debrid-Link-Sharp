@@ -109,7 +109,6 @@ public sealed class DownloaderApi
         return list;
     }
 
-    // The answer is one object for a normal link, and an array of objects for a folder.
     private static IReadOnlyList<DownloaderLink> ReadLinks(JsonElement value)
     {
         switch (value.ValueKind)
@@ -118,7 +117,7 @@ public sealed class DownloaderApi
                 return [ReadLink(value)];
 
             case JsonValueKind.Array:
-                List<DownloaderLink> links = [with(capacity: value.GetArrayLength())];
+                var links = new List<DownloaderLink>(capacity: value.GetArrayLength());
                 foreach (var item in value.EnumerateArray())
                 {
                     links.Add(ReadLink(item));
