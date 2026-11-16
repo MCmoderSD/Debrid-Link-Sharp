@@ -94,7 +94,7 @@ More endpoints will follow, grouped by the areas of the API documentation (the r
 The account types are in the namespace `DebridLinkSharp.Models.Account` and the downloader types in `DebridLinkSharp.Models.Downloader`.
 
 `Size` can be an estimation of the final size. If `IsProcessing` is `true`, the file is still being prepared on the servers of Debrid-Link
-and it is better to wait before the download is started. `Created` is a `DateTimeOffset`. A link with `Expired` set has to be added again with `AddAsync`.
+and it is better to wait before the download is started. `Created` is a `DateTimeOffset`. `Host` is a `Hoster`: a host that is not in the table gives `Hoster.Unknown`. `Name`, `Url` and `DownloadUrl` are always set. A link with `Expired` set has to be added again with `AddAsync`.
 
 `PremiumLeft` is a `TimeSpan` and always zero for a free account. `RegisterDate` is a `DateOnly`. `Username`, `Email`, `Settings`, `AvatarUrl` and `UpgradeAccountUrl` are always set. `Email` is already masked by Debrid-Link (`p**d@deb*******k`). `UpgradeAccountUrl` and `AvatarUrl` are links specific to your account, so do not log or share them.
 

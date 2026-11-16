@@ -7,17 +7,18 @@ public sealed class DownloaderLink
 {
     public string Id { get; init; } = "";
 
-    public string? Name { get; init; }
+    public string Name { get; init; } = "";
 
-    public string? Url { get; init; }
+    public string Url { get; init; } = "";
 
-    public string? DownloadUrl { get; init; }
+    public string DownloadUrl { get; init; } = "";
 
-    public string? Host { get; init; }
+    [JsonConverter(typeof(HosterConverter))]
+    public Hoster Host { get; init; }
 
     public long Size { get; init; }
 
-    public int? Chunk { get; init; }
+    public int Chunk { get; init; }
 
     [JsonConverter(typeof(UnixSecondsConverter))]
     public DateTimeOffset Created { get; init; }

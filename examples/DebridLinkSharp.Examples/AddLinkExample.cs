@@ -22,13 +22,13 @@ internal static class AddLinkExample
             foreach (var link in links)
             {
                 Console.WriteLine();
-                Console.WriteLine($"Name:    {link.Name ?? "-"}");
-                Console.WriteLine($"Host:    {link.Host ?? "-"}");
+                Console.WriteLine($"Name:    {link.Name}");
+                Console.WriteLine($"Host:    {link.Host}");
 
                 // The size can be an estimation of the final size.
                 Console.WriteLine($"Size:    {link.Size} bytes");
                 Console.WriteLine($"Created: {link.Created:u}");
-                Console.WriteLine($"Download: {link.DownloadUrl ?? "-"}");
+                Console.WriteLine($"Download: {link.DownloadUrl}");
 
                 if (link.IsProcessing)
                 {
