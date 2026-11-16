@@ -29,7 +29,7 @@ internal static class ErrorAdvice
         DebridLinkErrors.FileNotFound => "The file is gone from the host.",
         DebridLinkErrors.FileNotAvailable => "The file is not available on the host right now. Try again later.",
         DebridLinkErrors.BadFileUrl => "The link has an invalid format. Check the URL.",
-        DebridLinkErrors.BadFilePassword => "The host protects this file with a password.",
+        DebridLinkErrors.BadFilePassword => "The host protects this file with a password. Pass it to AddAsync.",
         DebridLinkErrors.NotFreeHost => "This host is not available for free accounts. Upgrade to premium.",
         DebridLinkErrors.MaintenanceHost => "The host is under maintenance. Try again later.",
         DebridLinkErrors.MaxLink or DebridLinkErrors.MaxLinkHost => "The daily link limit is reached.",

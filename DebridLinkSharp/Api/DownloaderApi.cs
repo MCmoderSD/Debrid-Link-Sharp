@@ -1,3 +1,4 @@
+using System.Text.Json;
 using DebridLinkSharp.Internal;
 using DebridLinkSharp.Models.Downloader;
 
@@ -10,6 +11,12 @@ public sealed class DownloaderApi
     internal DownloaderApi(DebridLinkHttp http)
     {
         _http = http;
+    }
+
+    public Task<IReadOnlyList<DownloaderLink>> AddAsync(string url, string? password = null, string? ip = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(url);
+        return AddCoreAsync(new DownloaderAddRequest { Url = url, Password = password, Ip = ip }, cancellationToken);
     }
 
     public Task<IReadOnlyList<string>> RemoveAsync(string id, CancellationToken cancellationToken = default)
@@ -68,6 +75,13 @@ public sealed class DownloaderApi
         return DebridLinkHttp.Deserialize(value, DebridLinkJsonContext.Default.DownloaderLimits, "the limits");
     }
 
+    private async Task<IReadOnlyList<DownloaderLink>> AddCoreAsync(DownloaderAddRequest request, CancellationToken cancellationToken)
+    {
+        var content = JsonContent.Create(request, DebridLinkJsonContext.Default.DownloaderAddRequest);
+        var value = await _http.SendAsync(HttpMethod.Post, "downloader/add", content, cancellationToken).ConfigureAwait(false);
+        return ReadLinks(value);
+    }
+
     private async Task<IReadOnlyList<string>> RemoveCoreAsync(List<string> ids, CancellationToken cancellationToken)
     {
         var path = $"downloader/{string.Join(',', ids.Select(Uri.EscapeDataString))}/remove";
@@ -93,5 +107,32 @@ public sealed class DownloaderApi
         }
 
         return list;
+    }
+
+    // The answer is one object for a normal link, and an array of objects for a folder.
+    private static IReadOnlyList<DownloaderLink> ReadLinks(JsonElement value)
+    {
+        switch (value.ValueKind)
+        {
+            case JsonValueKind.Object:
+                return [ReadLink(value)];
+
+            case JsonValueKind.Array:
+                List<DownloaderLink> links = [with(capacity: value.GetArrayLength())];
+                foreach (var item in value.EnumerateArray())
+                {
+                    links.Add(ReadLink(item));
+                }
+
+                return links;
+
+            default:
+                throw new DebridLinkServiceException(DebridLinkServiceError.InvalidResponse, $"Debrid-Link answered with {value.ValueKind} where a link or a list of links was expected.");
+        }
+    }
+
+    private static DownloaderLink ReadLink(JsonElement element)
+    {
+        return DebridLinkHttp.Deserialize(element, DebridLinkJsonContext.Default.DownloaderLink, "a link");
     }
 }

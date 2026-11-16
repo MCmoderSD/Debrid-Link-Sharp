@@ -9,6 +9,7 @@ internal static class Program
     // Every example gets the API key, which is read from the environment so it stays out of the shell history, and, if it needs one, an argument.
     private static readonly Dictionary<string, Example> Examples = new()
     {
+        ["add"] = new Example("add <link>", "Add a hoster link and print the direct download URL", true, (apiKey, link) => AddLinkExample.RunAsync(apiKey, link!)),
         ["limits"] = new Example("limits", "Show the daily limits and how much of them is used", false, (apiKey, _) => LimitsExample.RunAsync(apiKey)),
         ["limits-all"] = new Example("limits-all", "Show the daily limits of every host", false, (apiKey, _) => LimitsExample.RunAsync(apiKey, all: true)),
         ["hosts"] = new Example("hosts", "List the hosts that Debrid-Link supports", false, (apiKey, _) => HostsExample.RunAsync(apiKey)),
