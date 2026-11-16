@@ -22,7 +22,7 @@ internal static class ErrorAdvice
         DebridLinkErrors.FloodDetected => "Too many requests. The account is blocked for about an hour.",
         DebridLinkErrors.FreeServerOverload => "The free servers are overloaded. Try again later, or upgrade to premium.",
         DebridLinkErrors.UnverifiedEmail => "Verify the e-mail address of the account first, or upgrade to premium.",
-        DebridLinkErrors.BadId or DebridLinkErrors.BadIds => "An id is not valid. Use the ids of the links of the account.",
+        DebridLinkErrors.BadId or DebridLinkErrors.BadIds => "An id is not valid. Use the ids of the links from the list.",
         DebridLinkErrors.InfringingFile => "The file is unavailable for legal reasons.",
         DebridLinkErrors.NotDebrid => "Debrid-Link could not generate a download link. Try again later.",
         DebridLinkErrors.HostNotValid => "Debrid-Link does not support this host.",
