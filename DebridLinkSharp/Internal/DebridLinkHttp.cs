@@ -9,6 +9,13 @@ internal sealed class DebridLinkHttp(HttpClient httpClient, string apiKey, Debri
 {
     public async Task<JsonElement> SendAsync(HttpMethod method, string path, HttpContent? content, CancellationToken cancellationToken)
     {
+        var answer = await SendPagedAsync(method, path, content, cancellationToken).ConfigureAwait(false);
+        return answer.Value;
+    }
+
+    // Like SendAsync, but also gives the pagination object of the answers that come in pages.
+    public async Task<ApiAnswer> SendPagedAsync(HttpMethod method, string path, HttpContent? content, CancellationToken cancellationToken)
+    {
         HttpStatusCode status;
         string body;
 
@@ -50,7 +57,7 @@ internal sealed class DebridLinkHttp(HttpClient httpClient, string apiKey, Debri
             }
         }
 
-        return ReadValue(status, body);
+        return ReadAnswer(status, body);
     }
 
     public static T Deserialize<T>(JsonElement value, JsonTypeInfo<T> typeInfo, string what) where T : class
@@ -73,7 +80,7 @@ internal sealed class DebridLinkHttp(HttpClient httpClient, string apiKey, Debri
         }
     }
 
-    private static JsonElement ReadValue(HttpStatusCode status, string body)
+    private static ApiAnswer ReadAnswer(HttpStatusCode status, string body)
     {
         JsonDocument document;
 
@@ -101,7 +108,8 @@ internal sealed class DebridLinkHttp(HttpClient httpClient, string apiKey, Debri
                     throw new DebridLinkServiceException(DebridLinkServiceError.InvalidResponse, "Debrid-Link answered without a value.", status);
                 }
 
-                return value.Clone();
+                var pagination = root.TryGetProperty("pagination", out var paging) && paging.ValueKind is JsonValueKind.Object ? paging.Clone() : (JsonElement?)null;
+                return new ApiAnswer(value.Clone(), pagination);
             }
 
             var code = root.ValueKind is JsonValueKind.Object && root.TryGetProperty("error", out var error) && error.ValueKind is JsonValueKind.String
@@ -112,3 +120,6 @@ internal sealed class DebridLinkHttp(HttpClient httpClient, string apiKey, Debri
         }
     }
 }
+
+// The value of an answer, and the pagination object if the answer has one.
+internal readonly record struct ApiAnswer(JsonElement Value, JsonElement? Pagination);

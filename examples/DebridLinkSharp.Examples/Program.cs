@@ -10,6 +10,7 @@ internal static class Program
     private static readonly Dictionary<string, Example> Examples = new()
     {
         ["add"] = new Example("add <link>", "Add a hoster link and print the direct download URL", true, (apiKey, link) => AddLinkExample.RunAsync(apiKey, link!)),
+        ["list"] = new Example("list", "List the links of the account (first page)", false, (apiKey, _) => ListLinksExample.RunAsync(apiKey)),
         ["limits"] = new Example("limits", "Show the daily limits and how much of them is used", false, (apiKey, _) => LimitsExample.RunAsync(apiKey)),
         ["limits-all"] = new Example("limits-all", "Show the daily limits of every host", false, (apiKey, _) => LimitsExample.RunAsync(apiKey, all: true)),
         ["hosts"] = new Example("hosts", "List the hosts that Debrid-Link supports", false, (apiKey, _) => HostsExample.RunAsync(apiKey)),

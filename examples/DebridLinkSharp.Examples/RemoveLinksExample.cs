@@ -2,7 +2,7 @@ using DebridLinkSharp;
 
 namespace Examples;
 
-// Removes links from the account. The ids are separated by commas.
+// Removes links from the account. The ids are the ones that the list example prints, separated by commas.
 internal static class RemoveLinksExample
 {
     public static async Task RunAsync(string apiKey, string idList)
