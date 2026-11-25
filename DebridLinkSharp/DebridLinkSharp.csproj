@@ -22,8 +22,8 @@
 
         <!-- NuGet: description -->
         <Title>Debrid-Link-Sharp</Title>
-        <Description>Small .NET client for the Debrid-Link API v2: reads the account information, with typed models and typed errors.</Description>
-        <PackageTags>debrid-link;debrid;api;client;account</PackageTags>
+        <Description>Small .NET client for the Debrid-Link API v2: reads the account information, adds, lists and removes downloader links, and lists hosts and limits, with typed models and typed errors.</Description>
+        <PackageTags>debrid-link;debrid;api;client;downloader;premium</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageIcon>icon.png</PackageIcon>
 

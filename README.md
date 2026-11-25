@@ -1,6 +1,6 @@
 # DebridLinkSharp
 
-A small .NET client for the **[Debrid-Link](https://debrid-link.com) API v2**. You give it a hoster link and get back the direct download URL, the file name, the size and the host as plain objects. It also reads your account: the account type, the premium time left, the points and the settings, the daily limits and the hosts of the downloader, and it removes links.
+A small .NET client for the **[Debrid-Link](https://debrid-link.com) API v2**. You give it a hoster link and get back the direct download URL, the file name, the size and the host as plain objects. It also reads your account: the account type, the premium time left, the points and the settings, the daily limits and the hosts of the downloader, and it lists and removes the links of the account.
 
 - Targets `net11.0` and has no third-party dependencies: HTTP comes from `System.Net.Http`, JSON from `System.Text.Json`.
 - Plain model classes. The JSON handling uses serializers generated at compile time, so it needs no reflection.
@@ -20,6 +20,7 @@ The package targets `net11.0`.
 
 ```csharp
 using DebridLinkSharp;
+using DebridLinkSharp.Models;
 using DebridLinkSharp.Models.Account;
 using DebridLinkSharp.Models.Downloader;
 
@@ -42,6 +43,16 @@ foreach (DownloaderLink link in links)
 ```
 
 `AddAsync` always returns a list. A normal link gives one entry, a folder link gives one entry per file.
+
+```csharp
+// The links of the account, one page at a time. The first page is 0.
+PagedResult<DownloaderLink> page = await client.Downloader.ListAsync(page: 0);
+
+while (page.HasNext)
+{
+    page = await client.Downloader.ListAsync(page: page.Next);
+}
+```
 
 ```csharp
 // The daily limits. By default the answer has the hosts that the account uses right now, with all: true every host.
@@ -67,11 +78,12 @@ One client can be reused for many requests and from several threads.
 |--------------|-----------------------------------------------------------------------------|-------------------------------------------------------------------|
 | `Account`    | `GetInfoAsync(cancellationToken)`                                           | `GET /account/infos`                                              |
 | `Downloader` | `AddAsync(url, password?, ip?, cancellationToken)`                          | `POST /downloader/add`                                            |
+| `Downloader` | `ListAsync(page?, perPage?, ip?, ids?, cancellationToken)`                  | `GET /downloader/list`                                            |
 | `Downloader` | `GetLimitsAsync(all?, cancellationToken)`                                   | `GET /downloader/limits`, with `all` `GET /downloader/limits/all` |
 | `Downloader` | `GetHostsAsync(types?, cancellationToken)`                                  | `GET /downloader/hosts`                                           |
 | `Downloader` | `RemoveAsync(id, cancellationToken)`, `RemoveAsync(ids, cancellationToken)` | `DELETE /downloader/{ids}/remove`                                 |
 
-More endpoints will follow, grouped by the areas of the API documentation (the rest of `Downloader`, `Seedbox`, `Files`, ...).
+More endpoints will follow, grouped by the areas of the API documentation (`Seedbox`, `Files`, ...).
 
 ### The data model
 
@@ -84,6 +96,7 @@ More endpoints will follow, grouped by the areas of the API documentation (the r
 | `IpVersion`        | `Unknown`, `Auto`, `IPv4`                                                                                                                                                             |
 | `TwoFactorType`    | `Unknown`, `Email`, `Otp`                                                                                                                                                             |
 | `DownloaderLink`   | `Id`, `Name`, `Url`, `DownloadUrl`, `Host`, `Size`, `Chunk`, `Created`, `Expired`, `IsProcessing`                                                                                     |
+| `PagedResult<T>`   | `Items`, `Page`, `Pages`, `Next`, `Previous`, `HasNext`, `HasPrevious`                                                                                                                |
 | `DownloaderHost`   | `Name`, `Hoster`, `Type`, `Status`, `IsFree`, `IsOnline`, `Domains`, `Regexs`                                                                                                         |
 | `HostType`         | `Unknown`, `Host`, `Stream`, `Protect`                                                                                                                                                |
 | `DownloaderLimits` | `UsagePercent`, `NextReset`, `Hosters`                                                                                                                                                |
@@ -91,7 +104,7 @@ More endpoints will follow, grouped by the areas of the API documentation (the r
 | `Limit`            | `Current`, `Value`                                                                                                                                                                    |
 | `Hoster`           | `Unknown`, `Other`, then a member for every file host (`RapidGator`, `Mega`, `OneFichier`, ...) and, at the end, for every streaming site (`Dailymotion`, `Soundcloud`, `Vimeo`, ...) |
 
-The account types are in the namespace `DebridLinkSharp.Models.Account` and the downloader types in `DebridLinkSharp.Models.Downloader`.
+The account types are in the namespace `DebridLinkSharp.Models.Account`, the downloader types in `DebridLinkSharp.Models.Downloader` and `PagedResult<T>` in `DebridLinkSharp.Models`.
 
 `Size` can be an estimation of the final size. If `IsProcessing` is `true`, the file is still being prepared on the servers of Debrid-Link
 and it is better to wait before the download is started. `Created` is a `DateTimeOffset`. `Host` is a `Hoster`: a host that is not in the table gives `Hoster.Unknown`. `Name`, `Url` and `DownloadUrl` are always set. A link with `Expired` set has to be added again with `AddAsync`.
@@ -99,6 +112,8 @@ and it is better to wait before the download is started. `Created` is a `DateTim
 `PremiumLeft` is a `TimeSpan` and always zero for a free account. `RegisterDate` is a `DateOnly`. `Username`, `Email`, `Settings`, `AvatarUrl` and `UpgradeAccountUrl` are always set. `Email` is already masked by Debrid-Link (`p**d@deb*******k`). `UpgradeAccountUrl` and `AvatarUrl` are links specific to your account, so do not log or share them.
 
 `Cdn`, `IpVersion` and `TwoFactorType` of `AccountSettings` are enums with an `Unknown` member (the first one, so it is also the default). It is used when Debrid-Link sends no value or a value that this version does not know yet, so a new option there does not make the call fail.
+`ListAsync` gives a `PagedResult<DownloaderLink>`. The first page is 0. `Next` and `Previous` are page numbers, or -1 if there is none. `perPage` has to be between 20 and 100 and `ids` takes at most 100 ids. If `perPage` is left out, the API gives 30 links per page, newest first. A page that does not exist gives an empty list.
+
 `GetHostsAsync` lists the hosts that Debrid-Link supports. A host is online when its `Status` is 1 or higher (`IsOnline`). `Type` is `Host` for file hosts and `Stream` for streaming sites, `Protect` has no entries at the moment. With a key the list has 167 hosts (54 file hosts and 113 streaming sites) at the time of writing. Without a key it has only 43 file hosts, and an invalid key gives `badToken`. Without `types`, the answer has every host. Pass some `HostType`s to ask for some of them, for example `[HostType.Host]` for the file hosts. `Name` is the name of the host as Debrid-Link sends it. `Hoster` is the same host as an enum, and `Unknown` if the enum does not have it, which is the case for a host that Debrid-Link added after the library was written.
 
 `RemoveAsync` takes one id or several and answers with the ids that it was asked to remove. The API does not say whether a link with that id existed: an id with the right form that belongs to no link comes back as well. An id with a wrong form gives `badIds` (the table of the documentation has `badId`).
@@ -143,6 +158,7 @@ The API key is read from the environment variable `DEBRID_LINK_API_KEY`, so it d
 ```bash
 export DEBRID_LINK_API_KEY=your-key
 dotnet run --project examples/DebridLinkSharp.Examples -- add https://hoster.example/file/abc
+dotnet run --project examples/DebridLinkSharp.Examples -- list
 dotnet run --project examples/DebridLinkSharp.Examples -- account
 dotnet run --project examples/DebridLinkSharp.Examples -- limits
 dotnet run --project examples/DebridLinkSharp.Examples -- limits-all
@@ -153,6 +169,7 @@ dotnet run --project examples/DebridLinkSharp.Examples -- remove <id[,id...]>
 | Example      | What it shows                                                                                      |
 |--------------|----------------------------------------------------------------------------------------------------|
 | `add`        | Add a hoster link, print the direct download URL and handle the errors of the API                  |
+| `list`       | List the links of the account (first page)                                                         |
 | `account`    | Show everything Debrid-Link tells about the account, in sections, and handle the errors of the API |
 | `limits`     | Show the daily limits and how much of them is used (the hosts that the account uses right now)     |
 | `limits-all` | Show the daily limits of every host                                                                |
@@ -161,9 +178,9 @@ dotnet run --project examples/DebridLinkSharp.Examples -- remove <id[,id...]>
 
 ## Known limits
 
-- **Early version:** Only `GET /account/infos`, `POST /downloader/add`, `GET /downloader/limits`, `GET /downloader/hosts` and `DELETE /downloader/{ids}/remove` are implemented so far. The other endpoints (the rest of the downloader, seedbox, ...) and OAuth2 helpers (device code, refresh token) follow.
+- **Early version:** Only the endpoints of the table above are implemented so far. Other endpoints (seedbox, ...) and OAuth2 helpers (device code, refresh token) follow.
 - **Network and privacy:** Every call sends your API key, and the link you add, to `debrid-link.com` over HTTPS. `BaseUrl` can be pointed at your own proxy.
-- **OAuth2 scopes:** With an OAuth2 access token instead of a private API key, the token needs the scope `get.account` for the account, `post.downloader` for adding links, `get.downloader` for the limits and the hosts, and `delete.downloader` for removing links.
+- **OAuth2 scopes:** With an OAuth2 access token instead of a private API key, the token needs the scope `get.account` for the account, `post.downloader` for adding links, `get.downloader` for the list, the limits and the hosts, and `delete.downloader` for removing links.
 - **Personal use:** The documentation of Debrid-Link says that the API is not meant to resell their services and that an account is for personal use.
 - **No rate limiting:** The library does not slow down or repeat requests. If you send too many requests, the API answers with `floodDetected` and blocks the account for about an hour, so space your requests yourself.
 - **Folders:** A folder link returns several entries. Each entry has its own `DownloadUrl`.
